@@ -8,10 +8,10 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-32 p-2 flex flex-col min-h-screen">
+    <aside className="w-34 mt-2 flex min-h-screen flex-col font-[parkinsans]">
       {/* Logo */}
-      <div className="flex justify-center items-center mt-3 mb-8">
-        <div className="bg-white rounded-xl p-2">
+      <div className="mb-8 mt-3 flex items-center justify-center">
+        <div className="rounded-xl bg-white p-3.5 shadow-sm">
           <Image
             className="rounded-xl"
             src="/logo.png"
@@ -25,27 +25,28 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1">
-        <div className="flex flex-col justify-center items-center space-y-2 px-3">
+        <div className="flex flex-col items-center justify-center space-y-3 px-3">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex flex-col items-center gap-2 w-full p-2 rounded-xl transition-all duration-300 ${
-                  isActive ? "bg-white" : "hover:bg-white/50"
+                className={`flex w-full flex-col items-center gap-2 rounded-xl p-2 transition-all duration-300 ${
+                  isActive
+                    ? "bg-white shadow-sm"
+                    : "hover:bg-white/50 hover:shadow-sm"
                 }`}
                 aria-current={isActive ? "page" : undefined}
               >
                 <Image
                   src={item.icon}
-                  className="rounded-xl"
                   alt=""
-                  width={25}
-                  height={25}
+                  width={30}
+                  height={30}
                   aria-hidden="true"
                 />
-                <span className="text-sm text-center text-gray-800 font-medium">
+                <span className="text-center text-sm font-medium text-gray-700 tracking-wid ">
                   {item.name}
                 </span>
               </Link>

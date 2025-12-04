@@ -1,14 +1,51 @@
 import "./globals.css";
 import Sidebar from "@/components/sidebar";
+import {
+  Quicksand,
+  Albert_Sans,
+  Parkinsans,
+  Montserrat,
+} from "next/font/google";
+
+const quicksand = Quicksand({
+  subsets: ["latin"],
+  variable: "--font-quicksand",
+  fallback: ["system-ui", "arial"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const albertSans = Albert_Sans({
+  subsets: ["latin"],
+  variable: "--font-albert-sans",
+  fallback: ["system-ui", "arial"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const parkinsans = Parkinsans({
+  subsets: ["latin"],
+  variable: "--font-parkinsans",
+  weight: ["400", "500", "600", "700"],
+  fallback: ["system-ui", "arial"],
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  weight: ["400", "500", "600", "700"],
+  fallback: ["system-ui", "arial"],
+});
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="tr">
+    <html
+      lang="tr"
+      className={`${quicksand.variable} ${albertSans.variable} ${parkinsans.variable} ${montserrat.variable}`}
+    >
       <body className="antialiased">
-        <div className="flex min-h-screen bg-[#e0e0eb]">
+        <div className="flex max-h-screen overflow-hidden bg-[#e0e0eb]">
           <Sidebar />
-          <div className="flex flex-col min-h-screen w-full py-5 pr-5 overflow-hidden">
-            <main className="bg-white p-6 w-full h-full overflow-auto rounded-xl border-2 border-gray-300">
+          <div className="flex w-full max-h-screen flex-col overflow-hidden py-5 pr-5">
+            <main className="h-full w-full overflow-auto rounded-xl border-2 border-gray-300 bg-white p-7 shadow-sm">
               {children}
             </main>
           </div>

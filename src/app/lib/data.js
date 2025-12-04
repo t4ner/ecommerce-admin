@@ -1,10 +1,9 @@
-import categoriesIcon from "../../../public/categories.svg";
-
 export const menuItems = [
-  { name: "Kategori", icon: categoriesIcon, path: "/categories" },
-  { name: "Ürünler", icon: categoriesIcon, path: "/products" },
-  { name: "Satışlar", icon: categoriesIcon, path: "/sales" },
-  { name: "Stok", icon: categoriesIcon, path: "/stock" },
-  { name: "Ayarlar", icon: categoriesIcon, path: "/settings" },
-  { name: "Raporlar", icon: categoriesIcon, path: "/reports" },
+  { name: "Dashboard", icon: "/dashboard.svg", path: "/dashboard" },
+  { name: "Kategori", icon: "/category.svg", path: "/categories" },
+  { name: "Banner", icon: "/banner.svg", path: "/banners" },
+  { name: "Ürünler", icon: "/product.svg", path: "/products" },
+  { name: "Satışlar", icon: "/sales.svg", path: "/sales" },
+  { name: "Kampanya", icon: "/offer.svg", path: "/campaigns" },
+  { name: "Üyeler", icon: "/users.svg", path: "/users" },
 ];
