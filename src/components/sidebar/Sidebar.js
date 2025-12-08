@@ -42,8 +42,8 @@ export default function Sidebar() {
                 <Image
                   src={item.icon}
                   alt=""
-                  width={25}
-                  height={25}
+                  width={24}
+                  height={24}
                   aria-hidden="true"
                 />
                 <span className="text-center text-sm font-medium tracking-wide">

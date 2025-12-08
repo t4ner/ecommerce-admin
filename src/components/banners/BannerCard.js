@@ -46,37 +46,35 @@ export default function BannerCard({
         </div>
 
         {/* 🎯 Aksiyon Butonları */}
-        <div className="flex gap-2.5">
+        <div className="flex gap-3">
           {/* Düzenle Butonu */}
           <button
             onClick={() => onEdit(banner)}
-            className="flex items-center gap-2 rounded-xl border border-black bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 cursor-pointer tracking-wide"
+            className="flex items-center justify-center rounded-2xl bg-orange-100 p-4 hover:bg-orange-200 cursor-pointer transition-colors"
           >
-            <Image
-              src="/edit.svg"
-              alt="Edit"
-              width={20}
-              height={20}
-              className="h-5 w-5"
-              unoptimized
-            />
-            Düzenle
+          <Image src="/edit.svg" alt="Edit" width={20} height={20} className="text-orange-600" unoptimized />
           </button>
 
           {/* Sil Butonu */}
           <button
             onClick={() => onDelete(banner._id)}
-            className="flex items-center gap-2 rounded-xl border border-red-500 bg-white px-5 py-2.5 text-sm font-medium  hover:bg-red-50 cursor-pointer tracking-wide"
+            className="flex items-center justify-center rounded-2xl bg-red-100 p-4 hover:bg-red-200 cursor-pointer transition-colors"
           >
-            <Image
-              src="/delete.svg"
-              alt="Delete"
-              width={16}
-              height={16}
-              className="h-5 w-5"
-              unoptimized
-            />
-            Sil
+          <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-red-700"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
       </div>

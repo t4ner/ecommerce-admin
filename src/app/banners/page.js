@@ -15,8 +15,9 @@ export default function BannersPage() {
   // 📦 State Tanımlamaları - Verileri burada tutuyoruz
   const [banners, setBanners] = useState([]); // Tüm bannerlar
   const [loading, setLoading] = useState(true); // Yükleme durumu
-  const [showForm, setShowForm] = useState(false); // Form açık mı?
+  const [showForm, setShowForm] = useState(true); // Form açık mı?
   const [editingBanner, setEditingBanner] = useState(null); // Düzenlenen banner
+  const [formKey, setFormKey] = useState(0); // Form key - formu sıfırlamak için
   const formRef = useRef(null); // Form referansı
 
   // 🔄 Bannerları API'den çeken fonksiyon
@@ -93,9 +94,9 @@ export default function BannersPage() {
         await handleCreate(formData);
       }
 
-      // İşlem başarılı, formu kapat
-      setShowForm(false);
+      // İşlem başarılı, formu sıfırla
       setEditingBanner(null);
+      setFormKey((prev) => prev + 1); // Form key'ini değiştirerek formu sıfırla
     } catch (error) {
       alert(error.message || "Bir hata oluştu");
     }
@@ -126,25 +127,31 @@ export default function BannersPage() {
       <div className="flex justify-end">
         <button
           onClick={handleToggleForm}
-          className={`group flex items-center gap-2.5 rounded-2xl border bg-white px-5 py-3 text-sm font-medium transition-all hover:bg-gray-50 cursor-pointer ${
-            showForm ? "text-gray-900 border-gray-900" : "text-gray-700"
-          }`}
+          className="flex items-center justify-center rounded-2xl bg-blue-100 p-4 hover:bg-blue-200 cursor-pointer transition-colors"
         >
-          <Image
-            src="/plus.svg"
-            alt="Add"
-            width={20}
-            height={20}
-            className={`h-4 w-4 transition-transform ${
-              showForm ? "rotate-45" : "group-hover:rotate-90"
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`text-blue-600 transition-transform ${
+              showForm ? "rotate-0" : "rotate-135"
             }`}
-            unoptimized
-          />
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       </div>
 
       {/* Banner Ekleme/Düzenleme Formu - Card üstünde */}
       <BannerForm
+        key={formKey}
         ref={formRef}
         isOpen={showForm}
         onClose={handleCloseForm}

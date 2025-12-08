@@ -221,13 +221,13 @@ const BannerForm = forwardRef(function BannerForm(
               onDrop={handleDrop}
               className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 transition-all cursor-pointer ${
                 dragActive
-                  ? "border-orange-500 bg-orange-50"
+                  ? "border-blue-500 bg-blue-50"
                   : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
               }`}
             >
               {uploading ? (
                 <div className="flex flex-col items-center gap-3">
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-orange-500"></div>
+                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
                   <p className="text-sm text-gray-600">Yükleniyor...</p>
                 </div>
               ) : formData.imageUrl ? (
@@ -244,7 +244,7 @@ const BannerForm = forwardRef(function BannerForm(
               ) : (
                 <div className="flex flex-col items-center gap-4">
                   <svg
-                    className="h-16 w-16 text-orange-500"
+                    className="h-16 w-16 text-blue-500"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -259,9 +259,9 @@ const BannerForm = forwardRef(function BannerForm(
                   <div className="text-center">
                     <p className="text-xl font-medium text-gray-700">
                       Drop your images here, or{" "}
-                      <span className="text-orange-500">click to browse</span>
+                      <span className="text-blue-500">click to browse</span>
                     </p>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-3 text-gray-500">
                       1600 x 1200 (4:3) recommended. PNG, JPG and GIF files are
                       allowed
                     </p>
@@ -273,19 +273,49 @@ const BannerForm = forwardRef(function BannerForm(
         </div>
 
         {/* 🎯 Butonlar */}
-        <div className="mt-8 flex items-center justify-end gap-2.5 text-sm tracking-wide">
+        <div className="mt-8 flex items-center justify-end gap-3">
+          {/* İptal Butonu */}
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border px-6 py-2.5 font-medium text-gray-700 hover:bg-gray-50 cursor-pointer font-[Parkinsans]"
+            className="flex items-center justify-center rounded-2xl bg-gray-100 p-4 hover:bg-gray-200 cursor-pointer transition-colors"
           >
-            İptal
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-gray-700"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
+
+          {/* Kaydet Butonu */}
           <button
             type="submit"
-            className="rounded-lg bg-black text-white px-6 py-2.5 font-medium border border-black hover:bg-gray-800 cursor-pointer font-[Parkinsans]"
+            className="flex items-center justify-center rounded-2xl bg-green-100 p-4 hover:bg-green-200 cursor-pointer transition-colors"
           >
-            {editingBanner ? "Güncelle" : "Oluştur"}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-green-600"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           </button>
         </div>
       </form>
