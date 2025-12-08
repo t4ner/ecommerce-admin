@@ -2,7 +2,7 @@ import { useState, useEffect, forwardRef } from "react";
 import { generateSlug } from "@/utils/generateSlug";
 
 const CategoryForm = forwardRef(function CategoryForm(
-  { isOpen, onClose, onSubmit, editingCategory, allCategories },
+  { isOpen, onClose, onSubmit, editingCategory, allCategories = [] },
   ref
 ) {
   // 📝 Form verilerini tutan state
@@ -70,14 +70,14 @@ const CategoryForm = forwardRef(function CategoryForm(
   };
 
   // ⛔ Düzenlenen kategoriyi parent seçeneklerinden çıkar (kendinin altına taşınamaz)
-  const availableCategories = allCategories.filter(
+  const availableCategories = (allCategories || []).filter(
     (cat) => cat._id !== editingCategory?._id
   );
 
   // 📌 Seçili parent kategorinin adını bul
   const selectedCategoryName = formData.parentId
-    ? allCategories.find((cat) => cat._id === formData.parentId)?.name ||
-      "Ana Kategori"
+    ? (allCategories || []).find((cat) => cat._id === formData.parentId)
+        ?.name || "Ana Kategori"
     : "Ana Kategori";
 
   // 🎯 Parent kategori seç
@@ -127,7 +127,9 @@ const CategoryForm = forwardRef(function CategoryForm(
                   <div className="flex items-center justify-between">
                     <span
                       className={
-                        formData.parentId ? "text-gray-900 tracking-wide" : "text-gray-400 tracking-wide"
+                        formData.parentId
+                          ? "text-gray-900 tracking-wide"
+                          : "text-gray-400 tracking-wide"
                       }
                     >
                       {selectedCategoryName}

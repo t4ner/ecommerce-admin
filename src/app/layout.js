@@ -48,7 +48,7 @@ export default function RootLayout({ children }) {
       lang="tr"
       className={`${quicksand.variable} ${albertSans.variable} ${parkinsans.variable} ${montserrat.variable} ${poppins.variable}`}
     >
-      <body className="antialiased font-[poppins]">
+      <body className="antialiased">
         <div className="flex max-h-screen overflow-hidden bg-[#e0e0eb] ">
           <Sidebar />
           <div className="flex w-full max-h-screen flex-col overflow-hidden py-5 pr-5">

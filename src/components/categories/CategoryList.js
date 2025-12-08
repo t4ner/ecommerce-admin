@@ -5,10 +5,10 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
   if (categories.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-20 text-center">
-        <p className="text-lg font-semibold text-gray-700">
+        <p className="text-2xl font-medium text-gray-700">
           Henüz kategori eklenmemiş.
         </p>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-5 text-base text-gray-600">
           İlk kategorinizi oluşturmak için yukarıdaki + butonuna tıklayın
         </p>
       </div>

@@ -36,6 +36,8 @@ export default function CategoriesPage() {
     } catch (error) {
       console.error("Kategoriler yüklenirken hata:", error);
       alert("Kategoriler yüklenemedi");
+      setCategories([]);
+      setAllCategories([]);
     } finally {
       setLoading(false);
     }

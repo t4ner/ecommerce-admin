@@ -8,7 +8,8 @@ const API_BASE_URL = "http://localhost:5858/api/categories";
 export const getAllCategories = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/getAllCategories`);
-    return response.data;
+    // Backend {data: [...], success: true, message: "..."} formatında döndürüyor
+    return response.data.data || [];
   } catch (error) {
     console.error("getAllCategories error:", error);
     throw error;
@@ -21,7 +22,8 @@ export const getAllCategories = async () => {
 export const getAllCategoriesTree = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/getAllCategoriesTree`);
-    return response.data;
+    // Backend {data: [...], success: true, message: "..."} formatında döndürüyor
+    return response.data.data || [];
   } catch (error) {
     console.error("getAllCategoriesTree error:", error);
     throw error;
