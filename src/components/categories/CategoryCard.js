@@ -70,7 +70,7 @@ export default function CategoryCard({
           {/* Düzenle Butonu */}
           <button
             onClick={() => onEdit(category)}
-            className="flex items-center gap-2 rounded-xl border bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer tracking-wide"
+            className="flex items-center gap-2 rounded-xl border border-black bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 cursor-pointer tracking-wide"
           >
             <Image
               src="/edit.svg"

@@ -46,7 +46,7 @@ export default function Sidebar() {
                   height={25}
                   aria-hidden="true"
                 />
-                <span className="text-center text-sm font-medium text-gray-700 tracking-wid ">
+                <span className="text-center text-sm font-medium tracking-wide">
                   {item.name}
                 </span>
               </Link>

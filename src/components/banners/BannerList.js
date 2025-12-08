@@ -1,0 +1,33 @@
+import BannerCard from "./BannerCard";
+
+export default function BannerList({ banners, onEdit, onDelete }) {
+  // 📭 Banner yoksa boş durum mesajı göster
+  if (banners.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-20 text-center">
+        <p className="text-2xl font-medium text-gray-700">
+          Henüz banner eklenmemiş.
+        </p>
+        <p className="mt-5 text-base text-gray-600">
+          İlk bannerınızı oluşturmak için yukarıdaki + butonuna tıklayın
+        </p>
+      </div>
+    );
+  }
+
+  // 📋 Bannerları listele
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      {/* Her banner için BannerCard oluştur */}
+      {banners.map((banner, index) => (
+        <BannerCard
+          key={banner._id} // React için benzersiz anahtar
+          banner={banner} // Banner verisi
+          index={index} // Sıra numarası
+          onEdit={onEdit} // Düzenleme fonksiyonu
+          onDelete={onDelete} // Silme fonksiyonu
+        />
+      ))}
+    </div>
+  );
+}

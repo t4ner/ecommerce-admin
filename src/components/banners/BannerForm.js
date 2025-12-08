@@ -1,0 +1,296 @@
+import { useState, useEffect, forwardRef, useRef } from "react";
+import { generateSlug } from "@/utils/generateSlug";
+import axios from "axios";
+
+const BannerForm = forwardRef(function BannerForm(
+  { isOpen, onClose, onSubmit, editingBanner },
+  ref
+) {
+  // 📝 Form verilerini tutan state
+  const [formData, setFormData] = useState({
+    title: "",
+    slug: "",
+    imageUrl: "",
+  });
+
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // 🔄 Form açıldığında veya düzenleme banner değiştiğinde formu güncelle
+  useEffect(() => {
+    if (isOpen) {
+      if (editingBanner) {
+        setFormData({
+          title: editingBanner.title || "",
+          slug: editingBanner.slug || "",
+          imageUrl: editingBanner.imageUrl || "",
+        });
+      } else {
+        setFormData({
+          title: "",
+          slug: "",
+          imageUrl: "",
+        });
+      }
+      setUploading(false);
+      setDragActive(false);
+    }
+  }, [editingBanner, isOpen]);
+
+  // 📝 Banner başlığı değiştiğinde
+  const handleTitleChange = (e) => {
+    const title = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      title,
+    }));
+  };
+
+  // 🖼️ Resim yükleme fonksiyonu
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+
+    // Dosya tipi kontrolü
+    if (!file.type.startsWith("image/")) {
+      alert("Lütfen sadece resim dosyası yükleyin (PNG, JPG, GIF)");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // FormData oluştur
+      const formDataUpload = new FormData();
+      formDataUpload.append("image", file);
+
+      // API'ye gönder
+      const response = await axios.post(
+        "http://localhost:5858/api/upload/single",
+        formDataUpload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("📸 Upload Response:", response.data);
+
+      // Dönen URL'i forma yaz - Farklı response formatlarını kontrol et
+      let imageUrl = null;
+
+      if (response.data) {
+        // Backend'den gelen farklı response formatlarını kontrol et
+        imageUrl =
+          response.data.url ||
+          response.data.imageUrl ||
+          response.data.data?.url ||
+          response.data.data?.imageUrl ||
+          (typeof response.data === "string" ? response.data : null);
+      }
+
+      if (imageUrl) {
+        setFormData((prev) => ({
+          ...prev,
+          imageUrl: imageUrl,
+        }));
+        console.log("✅ Resim URL'i kaydedildi:", imageUrl);
+      } else {
+        console.error("❌ Response'da URL bulunamadı:", response.data);
+        alert(
+          "Resim yüklendi ancak URL alınamadı. Response formatı kontrol edilmeli."
+        );
+      }
+    } catch (error) {
+      console.error("❌ Resim yükleme hatası:", error);
+      console.error("❌ Hata detayı:", error.response?.data);
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Resim yüklenirken bir hata oluştu"
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 📁 Dosya seçildiğinde
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  // 🎯 Drag & Drop işlemleri
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  // 📂 Dosya seçici aç
+  const handleClickUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  // 💾 Formu gönder
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await onSubmit(formData);
+  };
+
+  // Form kapalıysa hiçbir şey gösterme
+  if (!isOpen) return null;
+
+  return (
+    <div
+      ref={ref}
+      className="mb-6 rounded-2xl border border-gray-100 bg-white shadow-sm "
+    >
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="p-8">
+        <div className="space-y-6">
+          {/* 📝 Banner Başlığı ve Slug - Yan Yana */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Banner Başlığı */}
+            <div>
+              <input
+                type="text"
+                required
+                value={formData.title}
+                onChange={handleTitleChange}
+                className="w-full rounded-lg placeholder:text-gray-400  placeholder:tracking-wide  border border-gray-300 px-4 py-2.5 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
+                placeholder="Banner Başlığı"
+              />
+            </div>
+
+            {/* Slug (URL dostu isim) */}
+            <div>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-mono">
+                  /
+                </span>
+                <input
+                  type="text"
+                  required
+                  value={formData.slug}
+                  onChange={(e) =>
+                    setFormData({ ...formData, slug: e.target.value })
+                  }
+                  className="w-full rounded-lg placeholder:text-gray-400 placeholder:tracking-wide  border border-gray-300 px-4 pl-7 py-2.5 font-mono focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
+                  placeholder="banner-slug"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 🖼️ Resim Upload Alanı */}
+          <div>
+            {/* Gizli file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/gif"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
+            {/* Drag & Drop Alanı */}
+            <div
+              onClick={handleClickUpload}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 transition-all cursor-pointer ${
+                dragActive
+                  ? "border-orange-500 bg-orange-50"
+                  : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
+              }`}
+            >
+              {uploading ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-orange-500"></div>
+                  <p className="text-sm text-gray-600">Yükleniyor...</p>
+                </div>
+              ) : formData.imageUrl ? (
+                <div className="flex flex-col items-center gap-4">
+                  <img
+                    src={formData.imageUrl}
+                    alt="Preview"
+                    className="max-h-48 rounded-lg object-cover"
+                  />
+                  <p className="text-sm text-gray-600">
+                    Resmi değiştirmek için tıklayın
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4">
+                  <svg
+                    className="h-16 w-16 text-orange-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  <div className="text-center">
+                    <p className="text-xl font-medium text-gray-700">
+                      Drop your images here, or{" "}
+                      <span className="text-orange-500">click to browse</span>
+                    </p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      1600 x 1200 (4:3) recommended. PNG, JPG and GIF files are
+                      allowed
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 🎯 Butonlar */}
+        <div className="mt-8 flex items-center justify-end gap-2.5 text-sm tracking-wide">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border px-6 py-2.5 font-medium text-gray-700 hover:bg-gray-50 cursor-pointer font-[Parkinsans]"
+          >
+            İptal
+          </button>
+          <button
+            type="submit"
+            className="rounded-lg bg-black text-white px-6 py-2.5 font-medium border border-black hover:bg-gray-800 cursor-pointer font-[Parkinsans]"
+          >
+            {editingBanner ? "Güncelle" : "Oluştur"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+});
+
+export default BannerForm;
