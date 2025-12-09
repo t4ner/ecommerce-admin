@@ -1,7 +1,7 @@
 // 🔤 Türkçe karakterleri İngilizce'ye çevir ve URL dostu slug oluştur
 export const generateSlug = (name) => {
   return name
-    .toLowerCase()
+    .toLocaleLowerCase("tr-TR") // Türkçe locale ile küçük harfe çevir (İ -> i)
     .replace(/ğ/g, "g")
     .replace(/ü/g, "u")
     .replace(/ş/g, "s")

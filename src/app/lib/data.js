@@ -6,4 +6,5 @@ export const menuItems = [
   { name: "Satışlar", icon: "/sales.svg", path: "/sales" },
   { name: "Kampanya", icon: "/offer.svg", path: "/campaigns" },
   { name: "Üyeler", icon: "/users.svg", path: "/users" },
+  { name: "Duyuru", icon: "/announcement.svg", path: "/announcement" },
 ];

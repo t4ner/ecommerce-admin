@@ -22,6 +22,7 @@ const ProductForm = forwardRef(function ProductForm(
   });
 
   const [categories, setCategories] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
@@ -69,11 +70,27 @@ const ProductForm = forwardRef(function ProductForm(
           isFeatured: false,
           stock: "",
         });
+        setIsDropdownOpen(false);
       }
       setUploading(false);
       setDragActive(false);
     }
   }, [editingProduct, isOpen]);
+
+  // 🖱️ Dropdown dışına tıklanınca kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isDropdownOpen && !event.target.closest(".dropdown-container")) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isDropdownOpen]);
 
   // 📝 Ürün adı değiştiğinde slug'ı otomatik oluştur
   const handleNameChange = (e) => {
@@ -200,6 +217,18 @@ const ProductForm = forwardRef(function ProductForm(
     }));
   };
 
+  // 📌 Seçili kategorinin adını bul
+  const selectedCategoryName = formData.category
+    ? categories.find((cat) => cat._id === formData.category)?.name ||
+      "Kategori Seçin"
+    : "Kategori Seçin";
+
+  // 🎯 Kategori seç
+  const handleSelectCategory = (categoryId) => {
+    setFormData({ ...formData, category: categoryId });
+    setIsDropdownOpen(false);
+  };
+
   // 💾 Formu gönder
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -302,21 +331,85 @@ const ProductForm = forwardRef(function ProductForm(
             </div>
 
             {/* Kategori */}
-            <div>
-              <select
-                value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
-                className="w-full rounded-lg placeholder:text-gray-400 placeholder:tracking-wide border border-gray-300 px-4 py-2.5 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
-              >
-                <option value="">Kategori Seçin</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+            <div className="dropdown-container">
+              <div className="relative">
+                {/* Dropdown Butonu */}
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className={`w-full rounded-lg border px-4 py-2.5 text-left transition-all ${
+                    isDropdownOpen
+                      ? "border-gray-900 ring-2 ring-gray-900/10"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={
+                        formData.category
+                          ? "text-gray-900 tracking-wide"
+                          : "text-gray-400 tracking-wide"
+                      }
+                    >
+                      {selectedCategoryName}
+                    </span>
+                    <svg
+                      className={`h-4 w-4 text-gray-500 transition-transform ${
+                        isDropdownOpen ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* 📋 Dropdown Menü */}
+                {isDropdownOpen && (
+                  <div className="absolute z-50 mt-2 w-full rounded-lg border border-gray-300 bg-white shadow-xl">
+                    <div className="max-h-64 overflow-y-auto">
+                      {categories.length > 0
+                        ? categories.map((cat) => (
+                            <button
+                              key={cat._id}
+                              type="button"
+                              onClick={() => handleSelectCategory(cat._id)}
+                              className={`w-full px-4 py-3 text-left transition-colors ${
+                                formData.category === cat._id
+                                  ? "bg-gray-100 text-gray-900"
+                                  : "text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span>{cat.name}</span>
+                                {formData.category === cat._id && (
+                                  <svg
+                                    className="h-4 w-4"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                            </button>
+                          ))
+                        : null}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -431,7 +524,8 @@ const ProductForm = forwardRef(function ProductForm(
                       <span className="text-blue-500">click to browse</span>
                     </p>
                     <p className="mt-3 text-gray-500">
-                    500 x 500 (1:1) recommended. PNG, JPG and GIF files are allowed (Multiple)
+                      500 x 500 (1:1) recommended. PNG, JPG and GIF files are
+                      allowed (Multiple)
                     </p>
                   </div>
                 </div>
@@ -450,8 +544,6 @@ const ProductForm = forwardRef(function ProductForm(
                       key={index}
                       className="group relative aspect-square overflow-hidden rounded-xl border-2 border-gray-200 bg-gray-50 transition-all hover:border-gray-400 hover:shadow-lg"
                     >
-                    
-
                       {/* Resim */}
                       <img
                         src={image}
