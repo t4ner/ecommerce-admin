@@ -15,19 +15,21 @@ export default function AnnouncementList({ announcements, onEdit, onDelete }) {
     );
   }
 
-  // 📋 Announcement'leri listele
+  // 📋 Announcement'leri listele - 2 sütunlu grid
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-      {/* Her announcement için AnnouncementCard oluştur */}
-      {announcements.map((announcement, index) => (
-        <AnnouncementCard
-          key={announcement._id} // React için benzersiz anahtar
-          announcement={announcement} // Announcement verisi
-          index={index} // Sıra numarası
-          onEdit={onEdit} // Düzenleme fonksiyonu
-          onDelete={onDelete} // Silme fonksiyonu
-        />
-      ))}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Her announcement için AnnouncementCard oluştur */}
+        {announcements.map((announcement, index) => (
+          <AnnouncementCard
+            key={announcement._id} // React için benzersiz anahtar
+            announcement={announcement} // Announcement verisi
+            index={index} // Sıra numarası
+            onEdit={onEdit} // Düzenleme fonksiyonu
+            onDelete={onDelete} // Silme fonksiyonu
+          />
+        ))}
+      </div>
     </div>
   );
 }

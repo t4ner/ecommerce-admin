@@ -20,20 +20,27 @@ export default function AnnouncementCard({
   };
 
   return (
-    <div className="mb-4 font-[Parkinsans]">
-      <div className="group relative flex items-start justify-between rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md hover:border-gray-300">
+    <div className="font-[Parkinsans]">
+      <div className="group relative flex items-start justify-between rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md hover:border-gray-300 h-full">
         {/* 📝 Announcement Bilgileri */}
-        <div className="flex flex-1 items-start gap-5">
+        <div className="flex flex-1 items-center gap-5">
           {/* 🎨 İkon */}
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-xl font-bold text-blue-600 shadow-md transition-transform group-hover:scale-105">
-       <Image src="/announcement.svg" alt="Announcement" width={32} height={32} className="text-blue-600" unoptimized />
+            <Image
+              src="/announcement.svg"
+              alt="Announcement"
+              width={24}
+              height={24}
+              className="text-blue-600"
+              unoptimized
+            />
           </div>
 
           {/* 📋 Announcement Detayları */}
           <div className="flex-1 min-w-0">
             {/* Mesaj */}
-            <div className="mb-3">
-              <p className="text-lg font-semibold text-gray-900 leading-relaxed whitespace-pre-wrap">
+            <div className="">
+              <p className="text-lg font-semibold text-gray-900 leading-relaxed whitespace-pre-wrap tracking-wide">
                 {announcement.message}
               </p>
             </div>
