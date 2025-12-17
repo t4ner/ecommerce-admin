@@ -53,7 +53,7 @@ const BannerForm = forwardRef(function BannerForm(
 
     // Dosya tipi kontrolü
     if (!file.type.startsWith("image/")) {
-      alert("Lütfen sadece resim dosyası yükleyin (PNG, JPG, GIF)");
+      alert("Lütfen sadece resim dosyası yükleyin (PNG, JPG, GIF, WEBP)");
       return;
     }
 
@@ -207,7 +207,7 @@ const BannerForm = forwardRef(function BannerForm(
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/jpg,image/gif"
+              accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
               onChange={handleFileChange}
               className="hidden"
             />
@@ -262,8 +262,8 @@ const BannerForm = forwardRef(function BannerForm(
                       <span className="text-blue-500">click to browse</span>
                     </p>
                     <p className="mt-3 text-gray-500">
-                      1600 x 1200 (4:3) recommended. PNG, JPG and GIF files are
-                      allowed
+                      1600 x 1200 (4:3) recommended. PNG, JPG, GIF and WEBP
+                      files are allowed
                     </p>
                   </div>
                 </div>
