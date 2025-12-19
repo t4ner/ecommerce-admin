@@ -9,9 +9,9 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-34 mt-2 flex min-h-screen flex-col font-[parkinsans]">
+    <aside className="w-34 mt-2 flex h-screen flex-col font-[parkinsans]">
       {/* Logo */}
-      <div className="mb-8 mt-3 flex items-center justify-center">
+      <div className="mb-8 mt-3 flex shrink-0 items-center justify-center">
         <div className="rounded-xl bg-white p-3.5 shadow-sm">
           <Image
             className="rounded-xl"
@@ -24,9 +24,9 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1">
-        <div className="flex flex-col items-center justify-center space-y-3 px-3">
+      {/* Navigation - Scrollable */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex flex-col items-center justify-center space-y-5 px-3 pb-3">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
@@ -57,7 +57,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Logout Button */}
-      <div className="mb-4 px-3">
+      <div className="mb-4 shrink-0 px-3">
         <button
           onClick={logout}
           className="flex w-full flex-col items-center gap-2 rounded-xl p-2 transition-all duration-300 hover:bg-red-50 hover:shadow-sm"
