@@ -1,13 +1,13 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 
-const API_BASE_URL = "http://localhost:5858/api/products";
+const API_BASE_URL = "/products";
 
 /**
  * Tüm ürünleri getir
  */
 export const getAllProducts = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getAllProducts`);
+    const response = await apiClient.get(`${API_BASE_URL}/getAllProducts`);
     return response.data.data || [];
   } catch (error) {
     console.error("getAllProducts error:", error);
@@ -35,7 +35,10 @@ export const createProduct = async (productData) => {
     };
     console.log("📤 Gönderilen veri:", payload);
 
-    const response = await axios.post(`${API_BASE_URL}/createProduct`, payload);
+    const response = await apiClient.post(
+      `${API_BASE_URL}/createProduct`,
+      payload
+    );
     return response.data;
   } catch (error) {
     console.error("❌ createProduct error:", error);
@@ -65,7 +68,7 @@ export const updateProduct = async (id, productData) => {
     };
     console.log("📤 Güncelleme verisi:", payload);
 
-    const response = await axios.put(
+    const response = await apiClient.put(
       `${API_BASE_URL}/updateProduct/${id}`,
       payload
     );
@@ -83,7 +86,9 @@ export const updateProduct = async (id, productData) => {
  */
 export const deleteProduct = async (id) => {
   try {
-    const response = await axios.delete(`${API_BASE_URL}/deleteProduct/${id}`);
+    const response = await apiClient.delete(
+      `${API_BASE_URL}/deleteProduct/${id}`
+    );
     return response.data;
   } catch (error) {
     console.error("deleteProduct error:", error);
@@ -96,7 +101,7 @@ export const deleteProduct = async (id) => {
  */
 export const getProductBySlug = async (slug) => {
   try {
-    const response = await axios.get(
+    const response = await apiClient.get(
       `${API_BASE_URL}/getProductBySlug/${slug}`
     );
     return response.data.data || null;
@@ -111,7 +116,9 @@ export const getProductBySlug = async (slug) => {
  */
 export const getProductById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getProductById/${id}`);
+    const response = await apiClient.get(
+      `${API_BASE_URL}/getProductById/${id}`
+    );
     return response.data.data || null;
   } catch (error) {
     console.error("getProductById error:", error);
@@ -124,7 +131,7 @@ export const getProductById = async (id) => {
  */
 export const getActiveProducts = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getActiveProducts`);
+    const response = await apiClient.get(`${API_BASE_URL}/getActiveProducts`);
     return response.data.data || [];
   } catch (error) {
     console.error("getActiveProducts error:", error);
@@ -137,7 +144,7 @@ export const getActiveProducts = async () => {
  */
 export const getFeaturedProducts = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getFeaturedProducts`);
+    const response = await apiClient.get(`${API_BASE_URL}/getFeaturedProducts`);
     return response.data.data || [];
   } catch (error) {
     console.error("getFeaturedProducts error:", error);

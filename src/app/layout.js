@@ -1,5 +1,6 @@
 import "./globals.css";
-import Sidebar from "@/components/sidebar/Sidebar";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AppLayout from "@/components/layout/AppLayout";
 import {
   Quicksand,
   Albert_Sans,
@@ -49,14 +50,9 @@ export default function RootLayout({ children }) {
       className={`${quicksand.variable} ${albertSans.variable} ${parkinsans.variable} ${montserrat.variable} ${poppins.variable}`}
     >
       <body className="antialiased">
-        <div className="flex max-h-screen overflow-hidden bg-[#eeeef2] ">
-          <Sidebar />
-          <div className="flex w-full max-h-screen flex-col overflow-hidden py-5 pr-5">
-            <main className="h-full w-full overflow-auto rounded-xl border-2 border-gray-300 bg-white p-7 shadow-sm">
-              {children}
-            </main>
-          </div>
-        </div>
+        <ProtectedRoute>
+          <AppLayout>{children}</AppLayout>
+        </ProtectedRoute>
       </body>
     </html>
   );

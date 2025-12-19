@@ -1,13 +1,13 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 
-const API_BASE_URL = "http://localhost:5858/api/announcements";
+const API_BASE_URL = "/announcements";
 
 /**
  * Tüm announcement'leri getir
  */
 export const getAllAnnouncements = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getAllAnnouncements`);
+    const response = await apiClient.get(`${API_BASE_URL}/getAllAnnouncements`);
     return response.data.data || [];
   } catch (error) {
     console.error("getAllAnnouncements error:", error);
@@ -25,7 +25,7 @@ export const createAnnouncement = async (announcementData) => {
     };
     console.log("📤 Gönderilen veri:", payload);
 
-    const response = await axios.post(
+    const response = await apiClient.post(
       `${API_BASE_URL}/createAnnouncement`,
       payload
     );
@@ -50,7 +50,7 @@ export const updateAnnouncement = async (id, announcementData) => {
     };
     console.log("📤 Güncelleme verisi:", payload);
 
-    const response = await axios.put(
+    const response = await apiClient.put(
       `${API_BASE_URL}/updateAnnouncement/${id}`,
       payload
     );
@@ -70,7 +70,7 @@ export const updateAnnouncement = async (id, announcementData) => {
  */
 export const deleteAnnouncement = async (id) => {
   try {
-    const response = await axios.delete(
+    const response = await apiClient.delete(
       `${API_BASE_URL}/deleteAnnouncement/${id}`
     );
     return response.data;
@@ -85,7 +85,7 @@ export const deleteAnnouncement = async (id) => {
  */
 export const getAnnouncementById = async (id) => {
   try {
-    const response = await axios.get(
+    const response = await apiClient.get(
       `${API_BASE_URL}/getAnnouncementById/${id}`
     );
     return response.data.data || null;

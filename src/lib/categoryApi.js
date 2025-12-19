@@ -1,13 +1,13 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 
-const API_BASE_URL = "http://localhost:5858/api/categories";
+const API_BASE_URL = "/categories";
 
 /**
  * Tüm kategorileri getir
  */
 export const getAllCategories = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getAllCategories`);
+    const response = await apiClient.get(`${API_BASE_URL}/getAllCategories`);
     // Backend {data: [...], success: true, message: "..."} formatında döndürüyor
     return response.data.data || [];
   } catch (error) {
@@ -21,7 +21,9 @@ export const getAllCategories = async () => {
  */
 export const getAllCategoriesTree = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getAllCategoriesTree`);
+    const response = await apiClient.get(
+      `${API_BASE_URL}/getAllCategoriesTree`
+    );
     // Backend {data: [...], success: true, message: "..."} formatında döndürüyor
     return response.data.data || [];
   } catch (error) {
@@ -41,7 +43,7 @@ export const createCategory = async (categoryData) => {
     };
     console.log("📤 Gönderilen veri:", payload);
 
-    const response = await axios.post(
+    const response = await apiClient.post(
       `${API_BASE_URL}/createCategory`,
       payload
     );
@@ -65,7 +67,7 @@ export const updateCategory = async (id, categoryData) => {
     };
     console.log("📤 Güncelleme verisi:", payload);
 
-    const response = await axios.put(
+    const response = await apiClient.put(
       `${API_BASE_URL}/updateCategory/${id}`,
       payload
     );
@@ -83,7 +85,9 @@ export const updateCategory = async (id, categoryData) => {
  */
 export const deleteCategory = async (id) => {
   try {
-    const response = await axios.delete(`${API_BASE_URL}/deleteCategory/${id}`);
+    const response = await apiClient.delete(
+      `${API_BASE_URL}/deleteCategory/${id}`
+    );
     return response.data;
   } catch (error) {
     console.error("deleteCategory error:", error);

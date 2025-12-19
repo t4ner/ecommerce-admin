@@ -1,13 +1,13 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 
-const API_BASE_URL = "http://localhost:5858/api/campaigns";
+const API_BASE_URL = "/campaigns";
 
 /**
  * Tüm campaign'leri getir
  */
 export const getAllCampaigns = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getAllCampaigns`);
+    const response = await apiClient.get(`${API_BASE_URL}/getAllCampaigns`);
     return response.data.data || [];
   } catch (error) {
     console.error("getAllCampaigns error:", error);
@@ -25,7 +25,7 @@ export const createCampaign = async (campaignData) => {
     };
     console.log("📤 Gönderilen veri:", payload);
 
-    const response = await axios.post(
+    const response = await apiClient.post(
       `${API_BASE_URL}/createCampaign`,
       payload
     );
@@ -48,7 +48,7 @@ export const updateCampaign = async (id, campaignData) => {
     };
     console.log("📤 Güncelleme verisi:", payload);
 
-    const response = await axios.put(
+    const response = await apiClient.put(
       `${API_BASE_URL}/updateCampaign/${id}`,
       payload
     );
@@ -66,7 +66,9 @@ export const updateCampaign = async (id, campaignData) => {
  */
 export const deleteCampaign = async (id) => {
   try {
-    const response = await axios.delete(`${API_BASE_URL}/deleteCampaign/${id}`);
+    const response = await apiClient.delete(
+      `${API_BASE_URL}/deleteCampaign/${id}`
+    );
     return response.data;
   } catch (error) {
     console.error("deleteCampaign error:", error);
@@ -79,7 +81,9 @@ export const deleteCampaign = async (id) => {
  */
 export const getCampaignById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getCampaignById/${id}`);
+    const response = await apiClient.get(
+      `${API_BASE_URL}/getCampaignById/${id}`
+    );
     return response.data.data || null;
   } catch (error) {
     console.error("getCampaignById error:", error);
@@ -92,7 +96,7 @@ export const getCampaignById = async (id) => {
  */
 export const getCampaignBySlug = async (slug) => {
   try {
-    const response = await axios.get(
+    const response = await apiClient.get(
       `${API_BASE_URL}/getCampaignBySlug/${slug}`
     );
     return response.data.data || null;
