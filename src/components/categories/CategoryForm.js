@@ -1,6 +1,6 @@
 import { useState, useEffect, forwardRef, useRef } from "react";
 import { generateSlug } from "@/utils/generateSlug";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 
 const CategoryForm = forwardRef(function CategoryForm(
   { isOpen, onClose, onSubmit, editingCategory, allCategories = [] },
@@ -84,7 +84,7 @@ const CategoryForm = forwardRef(function CategoryForm(
 
     // Dosya tipi kontrolü
     if (!file.type.startsWith("image/")) {
-      alert("Lütfen sadece resim dosyası yükleyin (PNG, JPG, GIF)");
+      alert("Lütfen sadece resim dosyası yükleyin (PNG, WEBP, JPG, GIF, SVG)");
       return;
     }
 
@@ -95,16 +95,12 @@ const CategoryForm = forwardRef(function CategoryForm(
       const formDataUpload = new FormData();
       formDataUpload.append("image", file);
 
-      // API'ye gönder
-      const response = await axios.post(
-        "http://localhost:5858/api/upload/single",
-        formDataUpload,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      // API'ye gönder - apiClient kullanarak authentication header'ı otomatik eklenir
+      const response = await apiClient.post("/upload/single", formDataUpload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       console.log("📸 Upload Response:", response.data);
 
@@ -376,7 +372,7 @@ const CategoryForm = forwardRef(function CategoryForm(
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/jpg,image/gif"
+              accept="image/png,image/jpeg,image/jpg,image/gif,image/svg+xml,image/webp"
               onChange={handleFileChange}
               className="hidden"
             />
@@ -431,7 +427,7 @@ const CategoryForm = forwardRef(function CategoryForm(
                       <span className="text-blue-500">click to browse</span>
                     </p>
                     <p className="mt-3 text-gray-500">
-                      500 x 500 (1:1) recommended. PNG, JPG and GIF files are
+                      1000 x 1000 (1:1) recommended. PNG, JPG and GIF files are
                       allowed
                     </p>
                   </div>
@@ -444,7 +440,7 @@ const CategoryForm = forwardRef(function CategoryForm(
           <div className="rounded-2xl border border-[#DCFFDC] bg-[#F0FFF0] p-4 w-[50%]">
             <div className="flex items-center justify-between">
               <span className="text-gray-800 font-medium tracking-wide">
-               Popüler Kategorilerde Göster
+                Popüler Kategorilerde Göster
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
