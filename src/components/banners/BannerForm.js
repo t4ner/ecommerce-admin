@@ -258,7 +258,7 @@ const BannerForm = forwardRef(function BannerForm(
                       <span className="text-blue-500">click to browse</span>
                     </p>
                     <p className="mt-3 text-gray-500">
-                      1600 x 1200 (4:3) recommended. PNG, JPG, GIF and WEBP
+                      1550 x 700 (2.2:1) recommended. PNG, JPG, GIF and WEBP
                       files are allowed
                     </p>
                   </div>

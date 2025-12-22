@@ -1,7 +1,7 @@
 import { useState, useEffect, forwardRef, useRef } from "react";
 import { generateSlug } from "@/utils/generateSlug";
 import { getAllCategories } from "@/lib/categoryApi";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 
 const ProductForm = forwardRef(function ProductForm(
   { isOpen, onClose, onSubmit, editingProduct },
@@ -121,16 +121,12 @@ const ProductForm = forwardRef(function ProductForm(
         const formDataUpload = new FormData();
         formDataUpload.append("image", file);
 
-        // API'ye gönder
-        const response = await axios.post(
-          "http://localhost:5858/api/upload/single",
-          formDataUpload,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        // API'ye gönder - apiClient kullanarak authentication header'ı otomatik eklenir
+        const response = await apiClient.post("/upload/single", formDataUpload, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
 
         console.log("📸 Upload Response:", response.data);
 
