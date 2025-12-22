@@ -1,6 +1,6 @@
 import { useState, useEffect, forwardRef, useRef } from "react";
 import { generateSlug } from "@/utils/generateSlug";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 
 const CampaignForm = forwardRef(function CampaignForm(
   { isOpen, onClose, onSubmit, editingCampaign },
@@ -65,16 +65,12 @@ const CampaignForm = forwardRef(function CampaignForm(
       const formDataUpload = new FormData();
       formDataUpload.append("image", file);
 
-      // API'ye gönder
-      const response = await axios.post(
-        "http://localhost:5858/api/upload/single",
-        formDataUpload,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      // API'ye gönder - apiClient kullanarak authentication header'ı otomatik eklenir
+      const response = await apiClient.post("/upload/single", formDataUpload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       console.log("📸 Upload Response:", response.data);
 
@@ -263,7 +259,7 @@ const CampaignForm = forwardRef(function CampaignForm(
                       <span className="text-blue-500">click to browse</span>
                     </p>
                     <p className="mt-3 text-gray-500">
-                      1600 x 1200 (4:3) recommended. PNG, JPG and GIF files are
+                      1550 x 700 (2.2:1) recommended. PNG, JPG, GIF and WEBP files are
                       allowed
                     </p>
                   </div>
