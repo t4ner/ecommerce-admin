@@ -1,6 +1,8 @@
-import { useState, useEffect, forwardRef, useRef } from "react";
+import { useState, useEffect, forwardRef, useCallback } from "react";
 import { generateSlug } from "@/utils/generateSlug";
-import apiClient from "@/lib/apiClient";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { useDragAndDrop } from "@/hooks/useDragAndDrop";
+import ImageUploadArea from "@/components/shared/ImageUploadArea";
 
 const BannerForm = forwardRef(function BannerForm(
   { isOpen, onClose, onSubmit, editingBanner },
@@ -11,11 +13,64 @@ const BannerForm = forwardRef(function BannerForm(
     title: "",
     slug: "",
     imageUrl: "",
+    imageUrlMobile: "",
   });
 
-  const [uploading, setUploading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef(null);
+  // 🖼️ Desktop resim yükleme hook'u
+  const { uploading: uploadingDesktop, uploadSingle: uploadSingleDesktop } =
+    useImageUpload({
+      onSuccess: useCallback((imageUrl) => {
+        setFormData((prev) => ({ ...prev, imageUrl }));
+      }, []),
+      onError: useCallback((error) => {
+        alert(error.message || "Resim yüklenirken bir hata oluştu");
+      }, []),
+    });
+
+  // 🖼️ Mobil resim yükleme hook'u
+  const { uploading: uploadingMobile, uploadSingle: uploadSingleMobile } =
+    useImageUpload({
+      onSuccess: useCallback((imageUrl) => {
+        setFormData((prev) => ({ ...prev, imageUrlMobile: imageUrl }));
+      }, []),
+      onError: useCallback((error) => {
+        alert(error.message || "Resim yüklenirken bir hata oluştu");
+      }, []),
+    });
+
+  // 🎯 Desktop Drag & Drop hook'u
+  const {
+    dragActive: dragActiveDesktop,
+    handleDrag: handleDragDesktop,
+    handleDrop: handleDropDesktopBase,
+  } = useDragAndDrop(
+    useCallback(
+      (files) => {
+        const file = files[0];
+        if (file) {
+          uploadSingleDesktop(file);
+        }
+      },
+      [uploadSingleDesktop]
+    )
+  );
+
+  // 🎯 Mobile Drag & Drop hook'u
+  const {
+    dragActive: dragActiveMobile,
+    handleDrag: handleDragMobile,
+    handleDrop: handleDropMobileBase,
+  } = useDragAndDrop(
+    useCallback(
+      (files) => {
+        const file = files[0];
+        if (file) {
+          uploadSingleMobile(file);
+        }
+      },
+      [uploadSingleMobile]
+    )
+  );
 
   // 🔄 Form açıldığında veya düzenleme banner değiştiğinde formu güncelle
   useEffect(() => {
@@ -25,132 +80,56 @@ const BannerForm = forwardRef(function BannerForm(
           title: editingBanner.title || "",
           slug: editingBanner.slug || "",
           imageUrl: editingBanner.imageUrl || "",
+          imageUrlMobile: editingBanner.imageUrlMobile || "",
         });
       } else {
         setFormData({
           title: "",
           slug: "",
           imageUrl: "",
+          imageUrlMobile: "",
         });
       }
-      setUploading(false);
-      setDragActive(false);
     }
   }, [editingBanner, isOpen]);
 
   // 📝 Banner başlığı değiştiğinde
-  const handleTitleChange = (e) => {
+  const handleTitleChange = useCallback((e) => {
     const title = e.target.value;
     setFormData((prev) => ({
       ...prev,
       title,
     }));
-  };
+  }, []);
 
-  // 🖼️ Resim yükleme fonksiyonu
-  const handleImageUpload = async (file) => {
-    if (!file) return;
-
-    // Dosya tipi kontrolü
-    if (!file.type.startsWith("image/")) {
-      alert("Lütfen sadece resim dosyası yükleyin (PNG, JPG, GIF, WEBP)");
-      return;
-    }
-
-    try {
-      setUploading(true);
-
-      // FormData oluştur
-      const formDataUpload = new FormData();
-      formDataUpload.append("image", file);
-
-      // API'ye gönder - apiClient kullanarak authentication header'ı otomatik eklenir
-      const response = await apiClient.post("/upload/single", formDataUpload, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      console.log("📸 Upload Response:", response.data);
-
-      // Dönen URL'i forma yaz - Farklı response formatlarını kontrol et
-      let imageUrl = null;
-
-      if (response.data) {
-        // Backend'den gelen farklı response formatlarını kontrol et
-        imageUrl =
-          response.data.url ||
-          response.data.imageUrl ||
-          response.data.data?.url ||
-          response.data.data?.imageUrl ||
-          (typeof response.data === "string" ? response.data : null);
+  // 📁 Desktop dosya seçildiğinde
+  const handleFileSelectDesktop = useCallback(
+    (file) => {
+      if (file) {
+        uploadSingleDesktop(file);
       }
+    },
+    [uploadSingleDesktop]
+  );
 
-      if (imageUrl) {
-        setFormData((prev) => ({
-          ...prev,
-          imageUrl: imageUrl,
-        }));
-        console.log("✅ Resim URL'i kaydedildi:", imageUrl);
-      } else {
-        console.error("❌ Response'da URL bulunamadı:", response.data);
-        alert(
-          "Resim yüklendi ancak URL alınamadı. Response formatı kontrol edilmeli."
-        );
+  // 📁 Mobile dosya seçildiğinde
+  const handleFileSelectMobile = useCallback(
+    (file) => {
+      if (file) {
+        uploadSingleMobile(file);
       }
-    } catch (error) {
-      console.error("❌ Resim yükleme hatası:", error);
-      console.error("❌ Hata detayı:", error.response?.data);
-      alert(
-        error.response?.data?.message ||
-          error.message ||
-          "Resim yüklenirken bir hata oluştu"
-      );
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // 📁 Dosya seçildiğinde
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  // 🎯 Drag & Drop işlemleri
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  // 📂 Dosya seçici aç
-  const handleClickUpload = () => {
-    fileInputRef.current?.click();
-  };
+    },
+    [uploadSingleMobile]
+  );
 
   // 💾 Formu gönder
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await onSubmit(formData);
-  };
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      await onSubmit(formData);
+    },
+    [formData, onSubmit]
+  );
 
   // Form kapalıysa hiçbir şey gösterme
   if (!isOpen) return null;
@@ -188,7 +167,7 @@ const BannerForm = forwardRef(function BannerForm(
                   required
                   value={formData.slug}
                   onChange={(e) =>
-                    setFormData({ ...formData, slug: e.target.value })
+                    setFormData((prev) => ({ ...prev, slug: e.target.value }))
                   }
                   className="w-full rounded-lg placeholder:text-gray-400 placeholder:tracking-wide  border border-gray-300 px-4 pl-7 py-2.5 font-mono focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
                   placeholder="banner-slug"
@@ -197,74 +176,38 @@ const BannerForm = forwardRef(function BannerForm(
             </div>
           </div>
 
-          {/* 🖼️ Resim Upload Alanı */}
+          {/* 🖼️ Desktop Resim Upload Alanı */}
           <div>
-            {/* Gizli file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-              onChange={handleFileChange}
-              className="hidden"
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Desktop Resim (Büyük Ekranlar)
+            </label>
+            <ImageUploadArea
+              imageUrl={formData.imageUrl}
+              uploading={uploadingDesktop}
+              dragActive={dragActiveDesktop}
+              onFileSelect={handleFileSelectDesktop}
+              onDrag={handleDragDesktop}
+              onDrop={handleDropDesktopBase}
+              recommendedSize="1550 x 700 (2.2:1)"
+              allowedTypes="PNG, JPG, GIF and WEBP"
             />
+          </div>
 
-            {/* Drag & Drop Alanı */}
-            <div
-              onClick={handleClickUpload}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 transition-all cursor-pointer ${
-                dragActive
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
-              }`}
-            >
-              {uploading ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
-                  <p className="text-sm text-gray-600">Yükleniyor...</p>
-                </div>
-              ) : formData.imageUrl ? (
-                <div className="flex flex-col items-center gap-4">
-                  <img
-                    src={formData.imageUrl}
-                    alt="Preview"
-                    className="max-h-48 rounded-lg object-cover"
-                  />
-                  <p className="text-sm text-gray-600">
-                    Resmi değiştirmek için tıklayın
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-4">
-                  <svg
-                    className="h-16 w-16 text-blue-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <div className="text-center">
-                    <p className="text-xl font-medium text-gray-700">
-                      Drop your images here, or{" "}
-                      <span className="text-blue-500">click to browse</span>
-                    </p>
-                    <p className="mt-3 text-gray-500">
-                      1550 x 700 (2.2:1) recommended. PNG, JPG, GIF and WEBP
-                      files are allowed
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* 🖼️ Mobile Resim Upload Alanı */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Mobil Resim (Küçük Ekranlar)
+            </label>
+            <ImageUploadArea
+              imageUrl={formData.imageUrlMobile}
+              uploading={uploadingMobile}
+              dragActive={dragActiveMobile}
+              onFileSelect={handleFileSelectMobile}
+              onDrag={handleDragMobile}
+              onDrop={handleDropMobileBase}
+              recommendedSize="900 x 1035 (9:10)"
+              allowedTypes="PNG, JPG, GIF and WEBP"
+            />
           </div>
         </div>
 

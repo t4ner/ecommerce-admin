@@ -1,6 +1,8 @@
-import { useState, useEffect, forwardRef, useRef } from "react";
+import { useState, useEffect, forwardRef, useCallback, useMemo } from "react";
 import { generateSlug } from "@/utils/generateSlug";
-import apiClient from "@/lib/apiClient";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { useDragAndDrop } from "@/hooks/useDragAndDrop";
+import ImageUploadArea from "@/components/shared/ImageUploadArea";
 
 const CategoryForm = forwardRef(function CategoryForm(
   { isOpen, onClose, onSubmit, editingCategory, allCategories = [] },
@@ -17,9 +19,33 @@ const CategoryForm = forwardRef(function CategoryForm(
   });
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef(null);
+
+  // 🖼️ Resim yükleme hook'u
+  const { uploading, uploadSingle } = useImageUpload({
+    onSuccess: useCallback((imageUrl) => {
+      setFormData((prev) => ({ ...prev, imageUrl }));
+    }, []),
+    onError: useCallback((error) => {
+      alert(error.message || "Resim yüklenirken bir hata oluştu");
+    }, []),
+  });
+
+  // 🎯 Drag & Drop hook'u
+  const {
+    dragActive,
+    handleDrag,
+    handleDrop: handleDropBase,
+  } = useDragAndDrop(
+    useCallback(
+      (files) => {
+        const file = files[0];
+        if (file) {
+          uploadSingle(file);
+        }
+      },
+      [uploadSingle]
+    )
+  );
 
   // 🔄 Form açıldığında veya düzenleme kategorisi değiştiğinde formu güncelle
   useEffect(() => {
@@ -47,158 +73,73 @@ const CategoryForm = forwardRef(function CategoryForm(
         });
         setIsDropdownOpen(false);
       }
-      setUploading(false);
-      setDragActive(false);
     }
   }, [editingCategory, isOpen]);
 
   // 🖱️ Dropdown dışına tıklanınca kapat
   useEffect(() => {
+    if (!isDropdownOpen) return;
+
     const handleClickOutside = (event) => {
-      if (isDropdownOpen && !event.target.closest(".dropdown-container")) {
+      if (!event.target.closest(".dropdown-container")) {
         setIsDropdownOpen(false);
       }
     };
 
-    if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isDropdownOpen]);
 
   // 📝 Kategori adı değiştiğinde slug'ı otomatik oluştur
-  const handleNameChange = (e) => {
+  const handleNameChange = useCallback((e) => {
     const name = e.target.value;
     setFormData((prev) => ({
       ...prev,
       name,
-      // Slug her zaman otomatik oluşturulur
       slug: generateSlug(name),
     }));
-  };
-
-  // 🖼️ Resim yükleme fonksiyonu
-  const handleImageUpload = async (file) => {
-    if (!file) return;
-
-    // Dosya tipi kontrolü
-    if (!file.type.startsWith("image/")) {
-      alert("Lütfen sadece resim dosyası yükleyin (PNG, WEBP, JPG, GIF, SVG)");
-      return;
-    }
-
-    try {
-      setUploading(true);
-
-      // FormData oluştur
-      const formDataUpload = new FormData();
-      formDataUpload.append("image", file);
-
-      // API'ye gönder - apiClient kullanarak authentication header'ı otomatik eklenir
-      const response = await apiClient.post("/upload/single", formDataUpload, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      console.log("📸 Upload Response:", response.data);
-
-      // Dönen URL'i forma yaz - Farklı response formatlarını kontrol et
-      let imageUrl = null;
-
-      if (response.data) {
-        // Backend'den gelen farklı response formatlarını kontrol et
-        imageUrl =
-          response.data.url ||
-          response.data.imageUrl ||
-          response.data.data?.url ||
-          response.data.data?.imageUrl ||
-          (typeof response.data === "string" ? response.data : null);
-      }
-
-      if (imageUrl) {
-        setFormData((prev) => ({
-          ...prev,
-          imageUrl: imageUrl,
-        }));
-        console.log("✅ Resim URL'i kaydedildi:", imageUrl);
-      } else {
-        console.error("❌ Response'da URL bulunamadı:", response.data);
-        alert(
-          "Resim yüklendi ancak URL alınamadı. Response formatı kontrol edilmeli."
-        );
-      }
-    } catch (error) {
-      console.error("❌ Resim yükleme hatası:", error);
-      console.error("❌ Hata detayı:", error.response?.data);
-      alert(
-        error.response?.data?.message ||
-          error.message ||
-          "Resim yüklenirken bir hata oluştu"
-      );
-    } finally {
-      setUploading(false);
-    }
-  };
+  }, []);
 
   // 📁 Dosya seçildiğinde
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  // 🎯 Drag & Drop işlemleri
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  // 📂 Dosya seçici aç
-  const handleClickUpload = () => {
-    fileInputRef.current?.click();
-  };
+  const handleFileSelect = useCallback(
+    (file) => {
+      if (file) {
+        uploadSingle(file);
+      }
+    },
+    [uploadSingle]
+  );
 
   // 💾 Formu gönder
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await onSubmit(formData);
-  };
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      await onSubmit(formData);
+    },
+    [formData, onSubmit]
+  );
 
   // ⛔ Düzenlenen kategoriyi parent seçeneklerinden çıkar (kendinin altına taşınamaz)
-  const availableCategories = (allCategories || []).filter(
-    (cat) => cat._id !== editingCategory?._id
+  const availableCategories = useMemo(
+    () =>
+      (allCategories || []).filter((cat) => cat._id !== editingCategory?._id),
+    [allCategories, editingCategory?._id]
   );
 
   // 📌 Seçili parent kategorinin adını bul
-  const selectedCategoryName = formData.parentId
-    ? (allCategories || []).find((cat) => cat._id === formData.parentId)
+  const selectedCategoryName = useMemo(() => {
+    if (!formData.parentId) return "Ana Kategori";
+    return (
+      (allCategories || []).find((cat) => cat._id === formData.parentId)
         ?.name || "Ana Kategori"
-    : "Ana Kategori";
+    );
+  }, [formData.parentId, allCategories]);
 
   // 🎯 Parent kategori seç
-  const handleSelectCategory = (categoryId) => {
-    setFormData({ ...formData, parentId: categoryId });
+  const handleSelectCategory = useCallback((categoryId) => {
+    setFormData((prev) => ({ ...prev, parentId: categoryId }));
     setIsDropdownOpen(false);
-  };
+  }, []);
 
   // Form kapalıysa hiçbir şey gösterme
   if (!isOpen) return null;
@@ -298,37 +239,35 @@ const CategoryForm = forwardRef(function CategoryForm(
                         </div>
                       </button>
 
-                      {availableCategories.length > 0
-                        ? availableCategories.map((cat) => (
-                            <button
-                              key={cat._id}
-                              type="button"
-                              onClick={() => handleSelectCategory(cat._id)}
-                              className={`w-full px-4 py-3 text-left transition-colors ${
-                                formData.parentId === cat._id
-                                  ? "bg-gray-100 text-gray-900"
-                                  : "text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span>{cat.name}</span>
-                                {formData.parentId === cat._id && (
-                                  <svg
-                                    className="h-4 w-4"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                )}
-                              </div>
-                            </button>
-                          ))
-                        : null}
+                      {availableCategories.map((cat) => (
+                        <button
+                          key={cat._id}
+                          type="button"
+                          onClick={() => handleSelectCategory(cat._id)}
+                          className={`w-full px-4 py-3 text-left transition-colors ${
+                            formData.parentId === cat._id
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{cat.name}</span>
+                            {formData.parentId === cat._id && (
+                              <svg
+                                className="h-4 w-4"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -358,7 +297,10 @@ const CategoryForm = forwardRef(function CategoryForm(
             <textarea
               value={formData.description}
               onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
               }
               rows="3"
               className="w-full resize-none rounded-lg placeholder:text-gray-400 placeholder:tracking-wide  border border-gray-300 p-3 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
@@ -367,74 +309,16 @@ const CategoryForm = forwardRef(function CategoryForm(
           </div>
 
           {/* 🖼️ Resim Upload Alanı */}
-          <div>
-            {/* Gizli file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg,image/gif,image/svg+xml,image/webp"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-
-            {/* Drag & Drop Alanı */}
-            <div
-              onClick={handleClickUpload}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 transition-all cursor-pointer ${
-                dragActive
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
-              }`}
-            >
-              {uploading ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
-                  <p className="text-sm text-gray-600">Yükleniyor...</p>
-                </div>
-              ) : formData.imageUrl ? (
-                <div className="flex flex-col items-center gap-4">
-                  <img
-                    src={formData.imageUrl}
-                    alt="Preview"
-                    className="max-h-48 rounded-lg object-cover"
-                  />
-                  <p className="text-sm text-gray-600">
-                    Resmi değiştirmek için tıklayın
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-4">
-                  <svg
-                    className="h-16 w-16 text-blue-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <div className="text-center">
-                    <p className="text-xl font-medium text-gray-700">
-                      Drop your images here, or{" "}
-                      <span className="text-blue-500">click to browse</span>
-                    </p>
-                    <p className="mt-3 text-gray-500">
-                      1000 x 1000 (1:1) recommended. PNG, JPG and GIF files are
-                      allowed
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <ImageUploadArea
+            imageUrl={formData.imageUrl}
+            uploading={uploading}
+            dragActive={dragActive}
+            onFileSelect={handleFileSelect}
+            onDrag={handleDrag}
+            onDrop={handleDropBase}
+            recommendedSize="1000 x 1000 (1:1)"
+            allowedTypes="PNG, WEBP, JPG, GIF and SVG"
+          />
 
           {/* 👁️ Görünürlük */}
           <div className="rounded-2xl border border-[#DCFFDC] bg-[#F0FFF0] p-4 w-[50%]">
@@ -447,7 +331,10 @@ const CategoryForm = forwardRef(function CategoryForm(
                   type="checkbox"
                   checked={formData.isVisible}
                   onChange={(e) =>
-                    setFormData({ ...formData, isVisible: e.target.checked })
+                    setFormData((prev) => ({
+                      ...prev,
+                      isVisible: e.target.checked,
+                    }))
                   }
                   className="sr-only peer"
                 />

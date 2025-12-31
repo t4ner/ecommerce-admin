@@ -1,7 +1,10 @@
-import { useState, useEffect, forwardRef, useRef } from "react";
+import { useState, useEffect, forwardRef, useCallback, useMemo } from "react";
 import { generateSlug } from "@/utils/generateSlug";
 import { getAllCategories } from "@/lib/categoryApi";
-import apiClient from "@/lib/apiClient";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { useDragAndDrop } from "@/hooks/useDragAndDrop";
+import ImageUploadArea from "@/components/shared/ImageUploadArea";
+import ImageGallery from "@/components/shared/ImageGallery";
 
 const ProductForm = forwardRef(function ProductForm(
   { isOpen, onClose, onSubmit, editingProduct },
@@ -23,9 +26,35 @@ const ProductForm = forwardRef(function ProductForm(
 
   const [categories, setCategories] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef(null);
+
+  // 🖼️ Resim yükleme hook'u (Multiple)
+  const { uploading, uploadMultiple } = useImageUpload({
+    onSuccess: useCallback((imageUrl) => {
+      // uploadMultiple zaten array döndürüyor, bu callback tek image için
+    }, []),
+    onError: useCallback((error) => {
+      alert(error.message || "Resim yüklenirken bir hata oluştu");
+    }, []),
+  });
+
+  // 🎯 Drag & Drop hook'u
+  const { dragActive, handleDrag, handleDrop: handleDropBase } = useDragAndDrop(
+    useCallback(
+      async (files) => {
+        const fileArray = Array.from(files);
+        if (fileArray.length > 0) {
+          const uploadedUrls = await uploadMultiple(fileArray);
+          if (uploadedUrls.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              images: [...prev.images, ...uploadedUrls],
+            }));
+          }
+        }
+      },
+      [uploadMultiple]
+    )
+  );
 
   // 🔄 Kategorileri yükle
   useEffect(() => {
@@ -37,8 +66,10 @@ const ProductForm = forwardRef(function ProductForm(
         console.error("Kategoriler yüklenemedi:", error);
       }
     };
-    fetchCategories();
-  }, []);
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen]);
 
   // 🔄 Form açıldığında veya düzenleme ürünü değiştiğinde formu güncelle
   useEffect(() => {
@@ -72,164 +103,81 @@ const ProductForm = forwardRef(function ProductForm(
         });
         setIsDropdownOpen(false);
       }
-      setUploading(false);
-      setDragActive(false);
     }
   }, [editingProduct, isOpen]);
 
   // 🖱️ Dropdown dışına tıklanınca kapat
   useEffect(() => {
+    if (!isDropdownOpen) return;
+
     const handleClickOutside = (event) => {
-      if (isDropdownOpen && !event.target.closest(".dropdown-container")) {
+      if (!event.target.closest(".dropdown-container")) {
         setIsDropdownOpen(false);
       }
     };
 
-    if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isDropdownOpen]);
 
   // 📝 Ürün adı değiştiğinde slug'ı otomatik oluştur
-  const handleNameChange = (e) => {
+  const handleNameChange = useCallback((e) => {
     const name = e.target.value;
     setFormData((prev) => ({
       ...prev,
       name,
       slug: generateSlug(name),
     }));
-  };
-
-  // 🖼️ Resim yükleme fonksiyonu (Multiple)
-  const handleImageUpload = async (files) => {
-    if (!files || files.length === 0) return;
-
-    try {
-      setUploading(true);
-      const uploadedUrls = [];
-
-      for (const file of files) {
-        // Dosya tipi kontrolü
-        if (!file.type.startsWith("image/")) {
-          alert("Lütfen sadece resim dosyası yükleyin (PNG, JPG, GIF)");
-          continue;
-        }
-
-        // FormData oluştur
-        const formDataUpload = new FormData();
-        formDataUpload.append("image", file);
-
-        // API'ye gönder - apiClient kullanarak authentication header'ı otomatik eklenir
-        const response = await apiClient.post("/upload/single", formDataUpload, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-
-        console.log("📸 Upload Response:", response.data);
-
-        // Dönen URL'i al
-        let imageUrl = null;
-
-        if (response.data) {
-          imageUrl =
-            response.data.url ||
-            response.data.imageUrl ||
-            response.data.data?.url ||
-            response.data.data?.imageUrl ||
-            (typeof response.data === "string" ? response.data : null);
-        }
-
-        if (imageUrl) {
-          uploadedUrls.push(imageUrl);
-          console.log("✅ Resim URL'i kaydedildi:", imageUrl);
-        } else {
-          console.error("❌ Response'da URL bulunamadı:", response.data);
-        }
-      }
-
-      // Yüklenen resimleri forma ekle
-      if (uploadedUrls.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          images: [...prev.images, ...uploadedUrls],
-        }));
-      }
-    } catch (error) {
-      console.error("❌ Resim yükleme hatası:", error);
-      console.error("❌ Hata detayı:", error.response?.data);
-      alert(
-        error.response?.data?.message ||
-          error.message ||
-          "Resim yüklenirken bir hata oluştu"
-      );
-    } finally {
-      setUploading(false);
-    }
-  };
+  }, []);
 
   // 📁 Dosya seçildiğinde
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      handleImageUpload(files);
-    }
-  };
-
-  // 🎯 Drag & Drop işlemleri
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const files = Array.from(e.dataTransfer.files || []);
-    if (files.length > 0) {
-      handleImageUpload(files);
-    }
-  };
-
-  // 📂 Dosya seçici aç
-  const handleClickUpload = () => {
-    fileInputRef.current?.click();
-  };
+  const handleFileSelect = useCallback(
+    async (files) => {
+      const fileArray = Array.isArray(files) ? files : [files];
+      if (fileArray.length > 0) {
+        const uploadedUrls = await uploadMultiple(fileArray);
+        if (uploadedUrls.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            images: [...prev.images, ...uploadedUrls],
+          }));
+        }
+      }
+    },
+    [uploadMultiple]
+  );
 
   // 🗑️ Resim sil
-  const handleRemoveImage = (index) => {
+  const handleRemoveImage = useCallback((index) => {
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
-  };
+  }, []);
 
   // 📌 Seçili kategorinin adını bul
-  const selectedCategoryName = formData.category
-    ? categories.find((cat) => cat._id === formData.category)?.name ||
+  const selectedCategoryName = useMemo(() => {
+    if (!formData.category) return "Kategori Seçin";
+    return (
+      categories.find((cat) => cat._id === formData.category)?.name ||
       "Kategori Seçin"
-    : "Kategori Seçin";
+    );
+  }, [formData.category, categories]);
 
   // 🎯 Kategori seç
-  const handleSelectCategory = (categoryId) => {
-    setFormData({ ...formData, category: categoryId });
+  const handleSelectCategory = useCallback((categoryId) => {
+    setFormData((prev) => ({ ...prev, category: categoryId }));
     setIsDropdownOpen(false);
-  };
+  }, []);
 
   // 💾 Formu gönder
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await onSubmit(formData);
-  };
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      await onSubmit(formData);
+    },
+    [formData, onSubmit]
+  );
 
   // Form kapalıysa hiçbir şey gösterme
   if (!isOpen) return null;
@@ -267,7 +215,7 @@ const ProductForm = forwardRef(function ProductForm(
                   required
                   value={formData.slug}
                   onChange={(e) =>
-                    setFormData({ ...formData, slug: e.target.value })
+                    setFormData((prev) => ({ ...prev, slug: e.target.value }))
                   }
                   className="w-full rounded-lg placeholder:text-gray-400 placeholder:tracking-wide border border-gray-300 px-4 pl-7 py-2.5 font-mono focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
                   placeholder="urun-slug"
@@ -281,7 +229,7 @@ const ProductForm = forwardRef(function ProductForm(
             <textarea
               value={formData.description}
               onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
+                setFormData((prev) => ({ ...prev, description: e.target.value }))
               }
               rows={4}
               className="w-full rounded-lg placeholder:text-gray-400 placeholder:tracking-wide border border-gray-300 px-4 py-2.5 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
@@ -304,7 +252,7 @@ const ProductForm = forwardRef(function ProductForm(
                   required
                   value={formData.price}
                   onChange={(e) =>
-                    setFormData({ ...formData, price: e.target.value })
+                    setFormData((prev) => ({ ...prev, price: e.target.value }))
                   }
                   className="w-full rounded-lg placeholder:text-gray-400 placeholder:tracking-wide border border-gray-300 px-4 pl-8 py-2.5 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
                   placeholder="Fiyat"
@@ -319,7 +267,7 @@ const ProductForm = forwardRef(function ProductForm(
                 min="0"
                 value={formData.stock}
                 onChange={(e) =>
-                  setFormData({ ...formData, stock: e.target.value })
+                  setFormData((prev) => ({ ...prev, stock: e.target.value }))
                 }
                 className="w-full rounded-lg placeholder:text-gray-400 placeholder:tracking-wide border border-gray-300 px-4 py-2.5 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:outline-none"
                 placeholder="Stok Adedi"
@@ -371,37 +319,35 @@ const ProductForm = forwardRef(function ProductForm(
                 {isDropdownOpen && (
                   <div className="absolute z-50 mt-2 w-full rounded-lg border border-gray-300 bg-white shadow-xl">
                     <div className="max-h-64 overflow-y-auto">
-                      {categories.length > 0
-                        ? categories.map((cat) => (
-                            <button
-                              key={cat._id}
-                              type="button"
-                              onClick={() => handleSelectCategory(cat._id)}
-                              className={`w-full px-4 py-3 text-left transition-colors ${
-                                formData.category === cat._id
-                                  ? "bg-gray-100 text-gray-900"
-                                  : "text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span>{cat.name}</span>
-                                {formData.category === cat._id && (
-                                  <svg
-                                    className="h-4 w-4"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                )}
-                              </div>
-                            </button>
-                          ))
-                        : null}
+                      {categories.map((cat) => (
+                        <button
+                          key={cat._id}
+                          type="button"
+                          onClick={() => handleSelectCategory(cat._id)}
+                          className={`w-full px-4 py-3 text-left transition-colors ${
+                            formData.category === cat._id
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{cat.name}</span>
+                            {formData.category === cat._id && (
+                              <svg
+                                className="h-4 w-4"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -422,7 +368,7 @@ const ProductForm = forwardRef(function ProductForm(
               <button
                 type="button"
                 onClick={() =>
-                  setFormData({ ...formData, isActive: !formData.isActive })
+                  setFormData((prev) => ({ ...prev, isActive: !prev.isActive }))
                 }
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                   formData.isActive
@@ -449,10 +395,10 @@ const ProductForm = forwardRef(function ProductForm(
               <button
                 type="button"
                 onClick={() =>
-                  setFormData({
-                    ...formData,
-                    isFeatured: !formData.isFeatured,
-                  })
+                  setFormData((prev) => ({
+                    ...prev,
+                    isFeatured: !prev.isFeatured,
+                  }))
                 }
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                   formData.isFeatured
@@ -470,118 +416,24 @@ const ProductForm = forwardRef(function ProductForm(
           </div>
 
           {/* 🖼️ Resim Upload Alanı */}
-          <div>
-            {/* Gizli file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg,image/gif"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-            />
+          <ImageUploadArea
+            imageUrl={null}
+            uploading={uploading}
+            dragActive={dragActive}
+            onFileSelect={handleFileSelect}
+            onDrag={handleDrag}
+            onDrop={handleDropBase}
+            multiple={true}
+            recommendedSize="500 x 500 (1:1)"
+            allowedTypes="PNG, JPG and GIF"
+          />
 
-            {/* Drag & Drop Alanı */}
-            <div
-              onClick={handleClickUpload}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 transition-all cursor-pointer ${
-                dragActive
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
-              }`}
-            >
-              {uploading ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
-                  <p className="text-sm text-gray-600">Yükleniyor...</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-4">
-                  <svg
-                    className="h-16 w-16 text-blue-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <div className="text-center">
-                    <p className="text-xl font-medium text-gray-700">
-                      Drop your images here, or{" "}
-                      <span className="text-blue-500">click to browse</span>
-                    </p>
-                    <p className="mt-3 text-gray-500">
-                      500 x 500 (1:1) recommended. PNG, JPG and GIF files are
-                      allowed (Multiple)
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Yüklenen Resimler - Modern Grid */}
-            {formData.images.length > 0 && (
-              <div className="mt-6">
-                <p className="mb-3 text-sm font-medium text-gray-700">
-                  Yüklenen Görseller ({formData.images.length})
-                </p>
-                <div className="grid grid-cols-5 gap-4">
-                  {formData.images.map((image, index) => (
-                    <div
-                      key={index}
-                      className="group relative aspect-square overflow-hidden rounded-xl border-2 border-gray-200 bg-gray-50 transition-all hover:border-gray-400 hover:shadow-lg"
-                    >
-                      {/* Resim */}
-                      <img
-                        src={image}
-                        alt={`Product ${index + 1}`}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-110"
-                      />
-
-                      {/* Silme Butonu */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveImage(index);
-                        }}
-                        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white opacity-0 shadow-lg transition-all hover:bg-red-600 group-hover:opacity-100"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-
-                      {/* Resim Numarası */}
-                      <div className="absolute bottom-2 left-2 rounded-lg bg-white bg-opacity-90 px-2 py-1 text-xs font-semibold text-gray-700 shadow-sm">
-                        #{index + 1}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Yüklenen Resimler */}
+          <ImageGallery
+            images={formData.images}
+            onRemove={handleRemoveImage}
+            showNumbers={true}
+          />
         </div>
 
         {/* 🎯 Butonlar */}
